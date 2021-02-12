@@ -147,7 +147,8 @@ export class ExamplePlatformAccessory {
     this.state.active = next;
 
     try {
-      await commandDevice({ token, deviceId, command: '電源', commandType: 'customize', parameter: 'default' });
+      const command = next ? this.platform.config.mapping.on : this.platform.config.mapping.off;
+      await commandDevice({ token, deviceId, command, commandType: 'customize', parameter: 'default' });
       callback(null, this.deriveActive(this.state.active));
     } catch (e) {
       this.platform.log.error(e);
