@@ -1,5 +1,5 @@
 {
-  "pluginAlias": "ExampleHomebridgePlugin",
+  "pluginAlias": "SwitchBotCustomHumidifier",
   "pluginType": "platform",
   "singular": true,
   "schema": {
@@ -9,8 +9,13 @@
         "title": "Name",
         "type": "string",
         "required": true,
-        "default": "Example Dynamic Platform"
-      }
+        "default": "SwitchBot Custom Himidifier"
+      },
+      "token": {
+        "title": "SwitchBot Token",
+        "type": "string",
+        "required": true,
+        "description": "Generated token in SwitchBot app (Revealed by tapping 10 times on version in settings)" }
     }
   }
 }
