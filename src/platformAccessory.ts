@@ -4,8 +4,13 @@ import { commandDevice, Device } from './api';
 import { SwitchBotCustomHumidifierPlatform } from './platform';
 import { unreachable } from './util';
 
+type State = {
+  active: boolean;
+};
+
 export type AccessoryContext = {
   device?: Device;
+  state?: State;
 };
 
 /**
@@ -13,16 +18,8 @@ export type AccessoryContext = {
  * An instance of this class is created for each accessory your platform registers
  * Each accessory may expose multiple services of different service types.
  */
-export class ExamplePlatformAccessory {
+export class CustomHumidifier {
   private service: Service;
-
-  /**
-   * These are just used to create a working example
-   * You should implement your own code to track the state of your accessory
-   */
-  private state = {
-    active: false,
-  };
 
   constructor(
     private readonly platform: SwitchBotCustomHumidifierPlatform,
@@ -70,6 +67,24 @@ export class ExamplePlatformAccessory {
     this.service.getCharacteristic(this.platform.Characteristic.Active)
       .on('get', this.handleActiveGet.bind(this))
       .on('set', this.handleActiveSet.bind(this));
+  }
+
+  initialState(): State {
+    return {
+      active: false,
+    };
+  }
+
+  get active() {
+    return this.accessory.context.state?.active ?? false;
+  }
+
+  set active(value: boolean) {
+    if (this.accessory.context.state === undefined) {
+      this.accessory.context.state = this.initialState();
+      return;
+    }
+    this.accessory.context.state.active = value;
   }
 
   /**
@@ -122,7 +137,7 @@ export class ExamplePlatformAccessory {
   handleActiveGet(callback) {
     this.platform.log.debug('Triggered GET Active');
 
-    callback(null, this.deriveActive(this.state.active));
+    callback(null, this.deriveActive(this.active));
   }
 
   /**
@@ -138,21 +153,21 @@ export class ExamplePlatformAccessory {
       return;
     }
 
-    const prev = this.state.active;
+    const prev = this.active;
     const next = this.reverseDeriveActive(value);
     if (prev === next) {
       return;
     }
 
-    this.state.active = next;
+    this.active = next;
 
     try {
       const command = next ? this.platform.config.mapping.on : this.platform.config.mapping.off;
       await commandDevice({ token, deviceId, command, commandType: 'customize', parameter: 'default' });
-      callback(null, this.deriveActive(this.state.active));
+      callback(null, this.deriveActive(next));
     } catch (e) {
       this.platform.log.error(e);
-      this.state.active = prev;
+      this.active = prev;
     }
   }
 

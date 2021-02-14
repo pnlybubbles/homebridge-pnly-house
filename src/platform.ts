@@ -1,7 +1,7 @@
 import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
-import { AccessoryContext, ExamplePlatformAccessory } from './platformAccessory';
+import { AccessoryContext, CustomHumidifier } from './platformAccessory';
 import { getDevices } from './api';
 
 /**
@@ -72,13 +72,7 @@ export class SwitchBotCustomHumidifierPlatform implements DynamicPlatformPlugin 
       // the cached devices we stored in the `configureAccessory` method above
       const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
 
-      if (process.env.NODE_ENV === 'development') {
-        if (existingAccessory) {
-          this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [existingAccessory]);
-        }
-      }
-
-      if (existingAccessory && process.env.NODE_ENV !== 'development') {
+      if (existingAccessory) {
         // the accessory already exists
         this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
 
@@ -88,7 +82,7 @@ export class SwitchBotCustomHumidifierPlatform implements DynamicPlatformPlugin 
 
         // create the accessory handler for the restored accessory
         // this is imported from `platformAccessory.ts`
-        new ExamplePlatformAccessory(this, existingAccessory as PlatformAccessory<AccessoryContext>);
+        new CustomHumidifier(this, existingAccessory as PlatformAccessory<AccessoryContext>);
 
         // it is possible to remove platform accessories at any time using `api.unregisterPlatformAccessories`, eg.:
         // remove platform accessories when no longer present
@@ -107,7 +101,7 @@ export class SwitchBotCustomHumidifierPlatform implements DynamicPlatformPlugin 
 
         // create the accessory handler for the newly create accessory
         // this is imported from `platformAccessory.ts`
-        new ExamplePlatformAccessory(this, accessory);
+        new CustomHumidifier(this, accessory);
 
         // link the accessory to your platform
         this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
