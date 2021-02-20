@@ -6,7 +6,7 @@ import { Humidifier, HumidifierState } from './machine/humidifier';
 
 export type AccessoryContext = {
   device?: Device;
-  state?: HumidifierState;
+  state?: Partial<HumidifierState>;
 };
 
 export class CustomHumidifier {
@@ -80,7 +80,8 @@ export class CustomHumidifier {
       throw new Error('fatal error');
     }
 
-    this.humidifier = new Humidifier(this.accessory.context.state ?? {}, this.platform.config, { deviceId }, this.platform);
+    this.accessory.context.state = this.accessory.context.state ?? {};
+    this.humidifier = new Humidifier(this.accessory.context.state, this.platform.config, { deviceId }, this.platform);
   }
 
   handleCurrentRelativeHumidityGet(callback) {
@@ -136,8 +137,8 @@ export class CustomHumidifier {
   async handleActiveSet(value, callback) {
     this.platform.log.debug('Triggered SET Active:', value);
 
-    await this.humidifier.setActive(value);
-
     callback(null);
+
+    await this.humidifier.setActive(value);
   }
 }
