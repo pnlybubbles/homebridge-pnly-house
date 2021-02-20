@@ -8,6 +8,12 @@
 
 # Homebridge pnly Room Plugin
 
+## Feature
+
+- [x] SwitchBot IR controlled humidifier
+  - MODERN DECO UV除菌機能付きハイブリッド加湿器 (jxh003j)
+- [ ] SwitchBot Plug controlled oil heater
+
 ## Setup Development Environment
 
 To develop Homebridge plugins you must have Node.js 12 or later installed, and a modern code editor such as [VS Code](https://code.visualstudio.com/). This plugin template uses [TypeScript](https://www.typescriptlang.org/) to make development easier and comes with pre-configured settings for [VS Code](https://code.visualstudio.com/) and ESLint. If you are using VS Code install these extensions:
