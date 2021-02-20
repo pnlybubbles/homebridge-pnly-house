@@ -21,17 +21,35 @@
         "title": "Key mapping",
         "type": "object",
         "properties": {
-          "on": {
-            "title": "ON",
+          "power": {
+            "title": "Power",
             "type": "string",
             "required": true,
-            "description": "Power ON button (If the button is toggle, assign same button as off)"
+            "description": "Power button label assign on SwitchBot"
           },
-          "off": {
-            "title": "OFF",
+          "volume": {
+            "title": "Volume",
             "type": "string",
             "required": true,
-            "description": "Power OFF button (If the button is toggle, assign same button as on)"
+            "description": "Volume button label assign on SwitchBot"
+          },
+          "heater": {
+            "title": "Heater",
+            "type": "string",
+            "required": true,
+            "description": "Heater button label assign on SwitchBot"
+          },
+          "humidity": {
+            "title": "Humidity",
+            "type": "string",
+            "required": true,
+            "description": "Humidity button label assign on SwitchBot"
+          },
+          "sleep": {
+            "title": "Sleep",
+            "type": "string",
+            "required": true,
+            "description": "Sleep button label assign on SwitchBot"
           }
         }
       }

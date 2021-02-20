@@ -1,32 +1,23 @@
-import { Service, PlatformAccessory } from 'homebridge';
-import { commandDevice, Device } from './api';
+import { Service, PlatformAccessory, Units, Perms, Formats } from 'homebridge';
+import { Device } from './api';
 
 import { SwitchBotCustomHumidifierPlatform } from './platform';
-import { unreachable } from './util';
-
-type State = {
-  active: boolean;
-};
+import { Humidifier, HumidifierState } from './machine/humidifier';
 
 export type AccessoryContext = {
   device?: Device;
-  state?: State;
+  state?: HumidifierState;
 };
 
-/**
- * Platform Accessory
- * An instance of this class is created for each accessory your platform registers
- * Each accessory may expose multiple services of different service types.
- */
 export class CustomHumidifier {
   private service: Service;
+
+  private humidifier: Humidifier;
 
   constructor(
     private readonly platform: SwitchBotCustomHumidifierPlatform,
     private readonly accessory: PlatformAccessory<AccessoryContext>,
   ) {
-
-    // set accessory information
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Switchbot Custom Humidifier')
       .setCharacteristic(this.platform.Characteristic.Model, this.accessory.context.device?.deviceName ?? 'Unknown')
@@ -35,28 +26,41 @@ export class CustomHumidifier {
         this.accessory.context.device?.deviceId ?? `Unknown-${this.accessory.UUID}`,
       );
 
-    // get the LightBulb service if it exists, otherwise create a new LightBulb service
-    // you can create multiple services for each accessory
     this.service = this.accessory.getService(this.platform.Service.HumidifierDehumidifier)
       || this.accessory.addService(this.platform.Service.HumidifierDehumidifier);
 
-    // set the service name, this is what is displayed as the default name on the Home app
-    // in this example we are using the name we stored in the `accessory.context` in the `discoverDevices` method.
+    // 表示名
     this.service.setCharacteristic(this.platform.Characteristic.Name, this.accessory.displayName);
 
-    // each service must implement at-minimum the "required characteristics" for the given service type
-    // see https://developers.homebridge.io/#/service/Lightbulb
-
-    // create handlers for required characteristics
+    // 現在の湿度
     this.service.getCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity)
       .on('get', this.handleCurrentRelativeHumidityGet.bind(this));
 
+    // 目的の湿度
+    this.service.getCharacteristic(this.platform.Characteristic.RelativeHumidityHumidifierThreshold)
+      .on('get', this.handleRelativeHumidityHumidifierThresholdGet.bind(this))
+      .on('set', this.handleRelativeHumidityHumidifierThresholdSet.bind(this))
+      .setProps({
+        format: Formats.FLOAT,
+        perms: [
+          Perms.PAIRED_READ,
+          Perms.PAIRED_WRITE,
+          Perms.EVENTS,
+        ],
+        maxValue: 100,
+        minValue: 0,
+        minStep: 1,
+        unit: Units.PERCENTAGE,
+      });
+
+    // 加湿器・除湿器の運転状態
     this.service.getCharacteristic(this.platform.Characteristic.CurrentHumidifierDehumidifierState)
       .on('get', this.handleCurrentHumidifierDehumidifierStateGet.bind(this))
       .setProps({
         validValues: [0, 2],
       });
 
+    // 加湿器・除湿器の設定
     this.service.getCharacteristic(this.platform.Characteristic.TargetHumidifierDehumidifierState)
       .on('get', this.handleTargetHumidifierDehumidifierStateGet.bind(this))
       .on('set', this.handleTargetHumidifierDehumidifierStateSet.bind(this))
@@ -64,45 +68,44 @@ export class CustomHumidifier {
         validValues: [1],
       });
 
+    // 電源
     this.service.getCharacteristic(this.platform.Characteristic.Active)
       .on('get', this.handleActiveGet.bind(this))
       .on('set', this.handleActiveSet.bind(this));
-  }
 
-  initialState(): State {
-    return {
-      active: false,
-    };
-  }
 
-  get active() {
-    return this.accessory.context.state?.active ?? false;
-  }
-
-  set active(value: boolean) {
-    if (this.accessory.context.state === undefined) {
-      this.accessory.context.state = this.initialState();
-      return;
+    const deviceId = this.accessory.context.device?.deviceId;
+    if (deviceId === undefined) {
+      this.platform.log.error('device not found');
+      throw new Error('fatal error');
     }
-    this.accessory.context.state.active = value;
+
+    this.humidifier = new Humidifier(this.accessory.context.state ?? {}, this.platform.config, { deviceId }, this.platform);
   }
 
-  /**
-   * Handle requests to get the current value of the "Current Relative Humidity" characteristic
-   */
   handleCurrentRelativeHumidityGet(callback) {
     this.platform.log.debug('Triggered GET CurrentRelativeHumidity');
 
-    // set this to a valid value for CurrentRelativeHumidity
+    // TODO: 湿度をBME280から取得する
     const currentValue = 1;
 
     callback(null, currentValue);
   }
 
+  handleRelativeHumidityHumidifierThresholdGet(callback) {
+    this.platform.log.debug('Triggered GET RelativeHumidityHumidifierThreshold');
 
-  /**
-   * Handle requests to get the current value of the "Current Humidifier Dehumidifier State" characteristic
-   */
+    callback(null, this.humidifier.getTargetHumidity());
+  }
+
+  handleRelativeHumidityHumidifierThresholdSet(value, callback) {
+    this.platform.log.debug('Triggered SET RelativeHumidityHumidifierThreshold', value);
+
+    this.humidifier.setTargetHumidity(value);
+
+    callback(null);
+  }
+
   handleCurrentHumidifierDehumidifierStateGet(callback) {
     this.platform.log.debug('Triggered GET CurrentHumidifierDehumidifierState');
 
@@ -110,10 +113,6 @@ export class CustomHumidifier {
     callback(null, this.platform.Characteristic.CurrentHumidifierDehumidifierState.HUMIDIFYING);
   }
 
-
-  /**
-   * Handle requests to get the current value of the "Target Humidifier Dehumidifier State" characteristic
-   */
   handleTargetHumidifierDehumidifierStateGet(callback) {
     this.platform.log.debug('Triggered GET TargetHumidifierDehumidifierState');
 
@@ -121,9 +120,6 @@ export class CustomHumidifier {
     callback(null, this.platform.Characteristic.TargetHumidifierDehumidifierState.HUMIDIFIER);
   }
 
-  /**
-   * Handle requests to set the "Target Humidifier Dehumidifier State" characteristic
-   */
   handleTargetHumidifierDehumidifierStateSet(value, callback) {
     this.platform.log.debug('Triggered SET TargetHumidifierDehumidifierState:', value);
 
@@ -131,55 +127,17 @@ export class CustomHumidifier {
     callback(null);
   }
 
-  /**
-   * Handle requests to get the current value of the "Active" characteristic
-   */
   handleActiveGet(callback) {
     this.platform.log.debug('Triggered GET Active');
 
-    callback(null, this.deriveActive(this.active));
+    callback(null, this.humidifier.getActive());
   }
 
-  /**
-   * Handle requests to set the "Active" characteristic
-   */
   async handleActiveSet(value, callback) {
     this.platform.log.debug('Triggered SET Active:', value);
 
-    const token = this.platform.config.token;
-    const deviceId = this.accessory.context.device?.deviceId;
+    await this.humidifier.setActive(value);
 
-    if (deviceId === undefined) {
-      return;
-    }
-
-    const prev = this.active;
-    const next = this.reverseDeriveActive(value);
-    if (prev === next) {
-      return;
-    }
-
-    this.active = next;
-
-    try {
-      const command = next ? this.platform.config.mapping.on : this.platform.config.mapping.off;
-      await commandDevice({ token, deviceId, command, commandType: 'customize', parameter: 'default' });
-      callback(null, this.deriveActive(next));
-    } catch (e) {
-      this.platform.log.error(e);
-      this.active = prev;
-    }
-  }
-
-  deriveActive(active: boolean) {
-    return active ? this.platform.Characteristic.Active.ACTIVE : this.platform.Characteristic.Active.INACTIVE;
-  }
-
-  reverseDeriveActive(value: 0 | 1) {
-    return value === this.platform.Characteristic.Active.ACTIVE
-      ? true
-      : value === this.platform.Characteristic.Active.INACTIVE
-        ? false
-        : unreachable(value);
+    callback(null);
   }
 }
