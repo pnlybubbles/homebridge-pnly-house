@@ -1,5 +1,5 @@
 {
-  "pluginAlias": "SwitchBotCustomHumidifier",
+  "pluginAlias": "PnlyRoom",
   "pluginType": "platform",
   "singular": true,
   "schema": {
@@ -9,7 +9,7 @@
         "title": "Name",
         "type": "string",
         "required": true,
-        "default": "SwitchBot Custom Himidifier"
+        "default": "pnly Room"
       },
       "token": {
         "title": "SwitchBot Token",

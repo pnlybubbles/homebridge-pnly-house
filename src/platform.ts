@@ -1,7 +1,7 @@
 import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
-import { AccessoryContext, CustomHumidifier } from './platformAccessory';
+import { AccessoryContext, SwitchBotCustomHumidifier } from './platformAccessory';
 import { getDevices } from './api';
 
 /**
@@ -9,7 +9,7 @@ import { getDevices } from './api';
  * This class is the main constructor for your plugin, this is where you should
  * parse the user config and discover/register accessories with Homebridge.
  */
-export class SwitchBotCustomHumidifierPlatform implements DynamicPlatformPlugin {
+export class PnlyRoomPlatform implements DynamicPlatformPlugin {
   public readonly Service: typeof Service = this.api.hap.Service;
   public readonly Characteristic: typeof Characteristic = this.api.hap.Characteristic;
 
@@ -82,7 +82,7 @@ export class SwitchBotCustomHumidifierPlatform implements DynamicPlatformPlugin 
 
         // create the accessory handler for the restored accessory
         // this is imported from `platformAccessory.ts`
-        new CustomHumidifier(this, existingAccessory as PlatformAccessory<AccessoryContext>);
+        new SwitchBotCustomHumidifier(this, existingAccessory as PlatformAccessory<AccessoryContext>);
 
         // it is possible to remove platform accessories at any time using `api.unregisterPlatformAccessories`, eg.:
         // remove platform accessories when no longer present
@@ -101,7 +101,7 @@ export class SwitchBotCustomHumidifierPlatform implements DynamicPlatformPlugin 
 
         // create the accessory handler for the newly create accessory
         // this is imported from `platformAccessory.ts`
-        new CustomHumidifier(this, accessory);
+        new SwitchBotCustomHumidifier(this, accessory);
 
         // link the accessory to your platform
         this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);

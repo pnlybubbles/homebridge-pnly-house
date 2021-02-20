@@ -1,7 +1,7 @@
 import { Service, PlatformAccessory, Units, Perms, Formats } from 'homebridge';
 import { Device } from './api';
 
-import { SwitchBotCustomHumidifierPlatform } from './platform';
+import { PnlyRoomPlatform } from './platform';
 import { Humidifier, HumidifierState } from './machine/humidifier';
 
 export type AccessoryContext = {
@@ -9,17 +9,17 @@ export type AccessoryContext = {
   state?: Partial<HumidifierState>;
 };
 
-export class CustomHumidifier {
+export class SwitchBotCustomHumidifier {
   private service: Service;
 
   private humidifier: Humidifier;
 
   constructor(
-    private readonly platform: SwitchBotCustomHumidifierPlatform,
+    private readonly platform: PnlyRoomPlatform,
     private readonly accessory: PlatformAccessory<AccessoryContext>,
   ) {
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
-      .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Switchbot Custom Humidifier')
+      .setCharacteristic(this.platform.Characteristic.Manufacturer, 'pnly Room')
       .setCharacteristic(this.platform.Characteristic.Model, this.accessory.context.device?.deviceName ?? 'Unknown')
       .setCharacteristic(
         this.platform.Characteristic.SerialNumber,
