@@ -1,6 +1,6 @@
-import 'homebridge';
+import "homebridge";
 
-declare module 'homebridge' {
+declare module "homebridge" {
   interface PlatformConfig {
     token: string;
     mapping: {

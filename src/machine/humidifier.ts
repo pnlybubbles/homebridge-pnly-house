@@ -1,6 +1,6 @@
-import { PlatformConfig, Logger } from 'homebridge';
-import { commandDevice } from '../api';
-import { delay, unreachable } from '../util';
+import { PlatformConfig, Logger } from "homebridge";
+import { commandDevice } from "../api";
+import { delay, unreachable } from "../util";
 
 /**
  * min: 30
@@ -26,7 +26,7 @@ type Props = {
   deviceId: string;
 };
 
-type RawActive = 0 | 1;
+export type RawActive = 0 | 1;
 
 /**
  * MODERN DECO
@@ -43,14 +43,16 @@ export class Humidifier {
     state: Partial<HumidifierState>,
     platformConfig: PlatformConfig,
     props: Props,
-    { log }: {
-    log: Logger;
-  },
+    {
+      log,
+    }: {
+      log: Logger;
+    }
   ) {
-    if (typeof state.active === 'undefined') {
+    if (typeof state.active === "undefined") {
       state.active = INITIAL_STATE.active;
     }
-    if (typeof state.targetHumidity === 'undefined') {
+    if (typeof state.targetHumidity === "undefined") {
       state.targetHumidity = INITIAL_STATE.targetHumidity;
     }
     this.state = state as HumidifierState;
@@ -72,7 +74,13 @@ export class Humidifier {
 
     try {
       const command = this.config.mapping.power;
-      await commandDevice({ token: this.config.token, deviceId: this.deviveId, command, commandType: 'customize', parameter: 'default' });
+      await commandDevice({
+        token: this.config.token,
+        deviceId: this.deviveId,
+        command,
+        commandType: "customize",
+        parameter: "default",
+      });
     } catch (e) {
       this.log.debug(e);
       this.state.active = current;
@@ -85,16 +93,13 @@ export class Humidifier {
     }
   }
 
-  async setActive(value: RawActive) {
-    const target = value === 1
-      ? true
-      : value === 0
-        ? false
-        : unreachable(value);
+  async setActive(value: RawActive): Promise<void> {
+    const target =
+      value === 1 ? true : value === 0 ? false : unreachable(value);
     await this.activeTransition(target);
   }
 
-  getActive() {
+  getActive(): RawActive {
     return this.state.active ? 1 : 0;
   }
 
@@ -112,7 +117,10 @@ export class Humidifier {
    * 湿度設定用の重要なリクエスト中、きりの良いタイミングでリクエストを中止するための関数
    * 中止した場合はresolveが呼ばれる
    */
-  private _abortHumidityTransition?: { resolve: () => void; reject: () => void };
+  private _abortHumidityTransition?: {
+    resolve: () => void;
+    reject: () => void;
+  };
 
   private async humidityTransition(target: Humidity) {
     if (this.state.targetHumidityInternal === target) {
@@ -125,7 +133,13 @@ export class Humidifier {
       // 湿度設定モードに入るための初回リクエスト
       try {
         const command = this.config.mapping.humidity;
-        await commandDevice({ token: this.config.token, deviceId: this.deviveId, command, commandType: 'customize', parameter: 'default' });
+        await commandDevice({
+          token: this.config.token,
+          deviceId: this.deviveId,
+          command,
+          commandType: "customize",
+          parameter: "default",
+        });
       } catch (e) {
         this.log.debug(e);
         return;
@@ -159,7 +173,13 @@ export class Humidifier {
 
       try {
         const command = this.config.mapping.humidity;
-        await commandDevice({ token: this.config.token, deviceId: this.deviveId, command, commandType: 'customize', parameter: 'default' });
+        await commandDevice({
+          token: this.config.token,
+          deviceId: this.deviveId,
+          command,
+          commandType: "customize",
+          parameter: "default",
+        });
       } catch (e) {
         this.log.debug(e);
         this.state.targetHumidityInternal = current;
@@ -176,7 +196,7 @@ export class Humidifier {
     return this.state.targetHumidity;
   }
 
-  async setTargetHumidity(value: number) {
+  async setTargetHumidity(value: number): Promise<void> {
     this.state.targetHumidity = value;
 
     if (!this.state.active) {
@@ -188,13 +208,19 @@ export class Humidifier {
         this._abortHumidityTransition.reject();
       }
       try {
-        await new Promise<void>((resolve, reject) => this._abortHumidityTransition = { resolve, reject });
+        await new Promise<void>(
+          (resolve, reject) =>
+            (this._abortHumidityTransition = { resolve, reject })
+        );
       } catch {
         return;
       }
     }
 
-    const target = Math.max(Math.min(Math.floor(value / 5) * 5, 90), 30) as Humidity;
+    const target = Math.max(
+      Math.min(Math.floor(value / 5) * 5, 90),
+      30
+    ) as Humidity;
 
     await this.humidityTransition(target);
   }
