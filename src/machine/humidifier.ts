@@ -75,7 +75,8 @@ export class Humidifier implements HumidifierMachine {
 
     if (this.state.active) {
       this.state.targetHumidityInternal = null;
-      await this.setTargetHumidity(this.state.targetHumidity);
+      // 湿度設定は非同期
+      void this.setTargetHumidity(this.state.targetHumidity);
     }
   }
 
@@ -202,7 +203,7 @@ export class Humidifier implements HumidifierMachine {
       30
     ) as Humidity;
 
-    await this.humidityTransition(target);
+    void this.humidityTransition(target);
   }
 
   async getHumidity(): Promise<number> {
