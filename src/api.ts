@@ -57,15 +57,22 @@ export function getDevices({
     .then((v) => v.data);
 }
 
-type CommandProps =
-  // Others
+type CommandProps = {
+  deviceId: string;
+} & (
+  | // Others
   {
-    command: string;
-    deviceId: string;
-    parameter: "default";
-    commandType: "customize";
-  };
-// TODO
+      commandType: "customize";
+      command: string;
+      parameter: "default";
+    }
+  // Plug
+  | {
+      commandType: "command";
+      command: "turnOn" | "turnOff";
+      parameter: "default";
+    }
+);
 
 export function commandDevice({
   token,

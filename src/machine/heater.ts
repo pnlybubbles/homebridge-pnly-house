@@ -2,7 +2,7 @@ import { Logger, PlatformConfig } from "homebridge";
 import { AccessoryContext } from "../platform";
 import { unreachable } from "../util";
 import { HeaterMachine } from "../binder/heater";
-import { getDeviceStatus } from "../api";
+import { commandDevice, getDeviceStatus } from "../api";
 
 export interface HeaterState {
   type: "heater";
@@ -37,12 +37,21 @@ export class Heater implements HeaterMachine {
       token: this.config.token,
       deviceId: this.deviveId,
     });
-    console.log(data);
     return data.body.power === "on";
   }
 
-  async setActive(_value: boolean): Promise<void> {
-    return await Promise.resolve();
+  async setActive(value: boolean): Promise<void> {
+    try {
+      await commandDevice({
+        token: this.config.token,
+        deviceId: this.deviveId,
+        commandType: "command",
+        command: value ? "turnOn" : "turnOff",
+        parameter: "default",
+      });
+    } catch (e) {
+      this.log.debug(e);
+    }
   }
 
   async getTargetTemperature(): Promise<number> {
