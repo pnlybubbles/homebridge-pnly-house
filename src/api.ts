@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosRequestConfig } from "axios";
 
 const SWITCHBOT_API_ENDPOINT = "https://api.switch-bot.com/v1.0";
 
@@ -24,6 +24,14 @@ type RequestConfig = {
   token: string;
 };
 
+function requestConfig({ token }: RequestConfig): AxiosRequestConfig {
+  return {
+    headers: {
+      Authorization: token,
+    },
+  };
+}
+
 function nextTick<T>(value: T) {
   return new Promise<T>((resolve) => {
     process.nextTick(() => resolve(value));
@@ -37,16 +45,15 @@ export function getDevices({
     return nextTick<Response<Devices>>(
       JSON.parse(
         // eslint-disable-next-line max-len
-        '{"statusCode":100,"body":{"deviceList":[{"deviceId":"483FDA0AFD5D","deviceName":"Plug 1","deviceType":"Plug","enableCloudService":true,"hubDeviceId":"000000000000"},{"deviceId":"F3709208082A","deviceName":"Hub Mini","deviceType":"Hub Mini","hubDeviceId":"000000000000"}],"infraredRemoteList":[{"deviceId":"02-202102111506-97603093","deviceName":"加湿器","remoteType":"Others","hubDeviceId":"F3709208082A"}]},"message":"success"}'
+        '{"statusCode":100,"body":{"deviceList":[{"deviceId":"483FDA0AFD5D","deviceName":"オイルヒーター","deviceType":"Plug","enableCloudService":true,"hubDeviceId":"000000000000"},{"deviceId":"F3709208082A","deviceName":"Hub Mini","deviceType":"Hub Mini","hubDeviceId":"000000000000"}],"infraredRemoteList":[{"deviceId":"02-202102111506-97603093","deviceName":"加湿器","remoteType":"Others","hubDeviceId":"F3709208082A"}]},"message":"success"}'
       )
     );
   }
   return axios
-    .get<Response<Devices>>(`${SWITCHBOT_API_ENDPOINT}/devices`, {
-      headers: {
-        Authorization: token,
-      },
-    })
+    .get<Response<Devices>>(
+      `${SWITCHBOT_API_ENDPOINT}/devices`,
+      requestConfig({ token })
+    )
     .then((v) => v.data);
 }
 
@@ -80,6 +87,30 @@ export function commandDevice({
           Authorization: token,
         },
       }
+    )
+    .then((v) => v.data);
+}
+
+type StatusProps = {
+  deviceId: string;
+};
+
+type StatusData = {
+  deviceId: string;
+  hubDeviceId: string;
+} & {
+  deviceType: "Plug";
+  power: string;
+};
+
+export function getDeviceStatus({
+  token,
+  deviceId,
+}: RequestConfig & StatusProps): Promise<Response<StatusData>> {
+  return axios
+    .get<Response<StatusData>>(
+      `${SWITCHBOT_API_ENDPOINT}/devices/${deviceId}/status`,
+      requestConfig({ token })
     )
     .then((v) => v.data);
 }

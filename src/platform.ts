@@ -12,6 +12,8 @@ import { PLATFORM_NAME, PLUGIN_NAME } from "./settings";
 import { Device, getDevices } from "./api";
 import { Humidifier, HumidifierState } from "./machine/humidifier";
 import humidifierBinder from "./binder/humidifier";
+import { Heater, HeaterState } from "./machine/heater";
+import heaterBinder from "./binder/heater";
 
 export interface PlatformConstant {
   Service: typeof Service;
@@ -19,9 +21,8 @@ export interface PlatformConstant {
 }
 
 export type AccessoryContext = {
-  type: "humidifier";
   device?: Device;
-  state?: HumidifierState;
+  state?: HumidifierState | HeaterState;
 };
 
 /**
@@ -76,15 +77,22 @@ export class PnlyRoomPlatform
     const token = this.config.token;
 
     const response = await getDevices({ token });
-    const devices = response.body.infraredRemoteList;
+    const devices = [
+      ...response.body.infraredRemoteList,
+      ...response.body.deviceList,
+    ];
 
     // loop over the discovered devices and register each one if it has not already been registered
     for (const device of devices) {
       if (/加湿器|humidifier/i.test(device.deviceName)) {
         const accessory = this.getAccessory(device);
-        accessory.context.type = "humidifier";
         const machine = new Humidifier(accessory.context, this.config, this);
         humidifierBinder(machine, accessory, this);
+      }
+      if (/ヒーター|暖房/i.test(device.deviceName)) {
+        const accessory = this.getAccessory(device);
+        const machine = new Heater(accessory.context, this.config, this);
+        heaterBinder(machine, accessory, this);
       }
     }
   }

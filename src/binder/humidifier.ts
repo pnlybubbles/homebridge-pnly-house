@@ -1,7 +1,6 @@
 import { Formats, Perms, PlatformAccessory, Units } from "homebridge";
-import { RawActive } from "../machine/humidifier";
+import { deriveActive, deriveRawActive, RawActive } from "../common";
 import { PlatformConstant, AccessoryContext } from "../platform";
-import { unreachable } from "../util";
 
 export interface HumidifierMachine {
   getHumidity(): Promise<number>;
@@ -90,18 +89,16 @@ export default function humidifierBinder(
     .getCharacteristic(Characteristic.Active)
     .on(
       "get",
-      (cb) => void machine.getActive().then((value) => cb(null, value))
+      (cb) =>
+        void machine
+          .getActive()
+          .then((value) => cb(null, deriveRawActive(value)))
     )
-    .on("set", (value, cb) => {
-      const rawActive = value as RawActive;
-      void machine
-        .setActive(
-          rawActive === 1
-            ? true
-            : rawActive === 0
-            ? false
-            : unreachable(rawActive)
-        )
-        .then(() => cb(null));
-    });
+    .on(
+      "set",
+      (value, cb) =>
+        void machine
+          .setActive(deriveActive(value as RawActive))
+          .then(() => cb(null))
+    );
 }

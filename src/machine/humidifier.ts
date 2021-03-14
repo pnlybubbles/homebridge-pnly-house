@@ -14,12 +14,11 @@ import { AccessoryContext } from "../platform";
 type Humidity = null | number;
 
 export type HumidifierState = {
+  type: "humidifier";
   active: boolean;
   targetHumidity: number;
   targetHumidityInternal: null | number;
 };
-
-export type RawActive = 0 | 1;
 
 /**
  * MODERN DECO
@@ -41,7 +40,10 @@ export class Humidifier implements HumidifierMachine {
       log: Logger;
     }
   ) {
-    this.state = context.state ?? (context.state = INITIAL_STATE);
+    this.state =
+      context.state?.type === "humidifier"
+        ? context.state
+        : (context.state = INITIAL_STATE);
     this.deviveId = context.device?.deviceId ?? unreachable();
     this.config = platformConfig;
     this.log = log;
@@ -212,6 +214,7 @@ export class Humidifier implements HumidifierMachine {
 }
 
 const INITIAL_STATE: HumidifierState = {
+  type: "humidifier",
   active: false,
   targetHumidity: 50,
   targetHumidityInternal: null,
