@@ -1,6 +1,8 @@
 import { PlatformConfig, Logger } from "homebridge";
 import { commandDevice } from "../api";
 import { delay, unreachable } from "../util";
+import { HumidifierMachine } from "../binder/humidifier";
+import { AccessoryContext } from "../platform";
 
 /**
  * min: 30
@@ -10,20 +12,11 @@ import { delay, unreachable } from "../util";
  * null means no humidity control
  */
 type Humidity = null | number;
-type Volume = 1 | 2 | 3;
-type Heater = 0 | 1 | 2 | 3;
 
 export type HumidifierState = {
   active: boolean;
   targetHumidity: number;
   targetHumidityInternal: null | number;
-  volume: Volume;
-  heater: Heater;
-  sleep: boolean;
-};
-
-type Props = {
-  deviceId: string;
 };
 
 export type RawActive = 0 | 1;
@@ -33,37 +26,30 @@ export type RawActive = 0 | 1;
  * UV除菌機能付きハイブリッド加湿器
  * jxh003j
  */
-export class Humidifier {
+export class Humidifier implements HumidifierMachine {
   private state: HumidifierState;
   private deviveId: string;
   private log: Logger;
   private config: PlatformConfig;
 
   constructor(
-    state: Partial<HumidifierState>,
+    context: AccessoryContext,
     platformConfig: PlatformConfig,
-    props: Props,
     {
       log,
     }: {
       log: Logger;
     }
   ) {
-    if (typeof state.active === "undefined") {
-      state.active = INITIAL_STATE.active;
-    }
-    if (typeof state.targetHumidity === "undefined") {
-      state.targetHumidity = INITIAL_STATE.targetHumidity;
-    }
-    this.state = state as HumidifierState;
-    this.deviveId = props.deviceId;
+    this.state = context.state ?? (context.state = INITIAL_STATE);
+    this.deviveId = context.device?.deviceId ?? unreachable();
     this.config = platformConfig;
     this.log = log;
   }
 
   // 電源
 
-  private async activeTransition(target: boolean) {
+  async setActive(target: boolean): Promise<void> {
     const current = this.state.active;
 
     if (current === target) {
@@ -93,14 +79,8 @@ export class Humidifier {
     }
   }
 
-  async setActive(value: RawActive): Promise<void> {
-    const target =
-      value === 1 ? true : value === 0 ? false : unreachable(value);
-    await this.activeTransition(target);
-  }
-
-  getActive(): RawActive {
-    return this.state.active ? 1 : 0;
+  getActive(): Promise<boolean> {
+    return Promise.resolve(this.state.active);
   }
 
   // 湿度設定
@@ -192,8 +172,8 @@ export class Humidifier {
     this._hotHumidityTransition = false;
   }
 
-  getTargetHumidity(): number {
-    return this.state.targetHumidity;
+  getTargetHumidity(): Promise<number> {
+    return Promise.resolve(this.state.targetHumidity);
   }
 
   async setTargetHumidity(value: number): Promise<void> {
@@ -224,9 +204,14 @@ export class Humidifier {
 
     await this.humidityTransition(target);
   }
+
+  async getHumidity(): Promise<number> {
+    return Promise.resolve(1);
+  }
 }
 
-const INITIAL_STATE = {
+const INITIAL_STATE: HumidifierState = {
   active: false,
   targetHumidity: 50,
+  targetHumidityInternal: null,
 };

@@ -1,4 +1,6 @@
-export function unreachable(_: never): never {
+export function unreachable(): never;
+export function unreachable(_: never): never;
+export function unreachable(_?: never): never {
   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
   throw new Error(`unreachable (${_})`);
 }
